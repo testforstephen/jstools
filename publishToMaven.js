@@ -111,6 +111,7 @@ function deployToStagingRepo(configs, artifactFolder) {
 function closeStagingRepo(configs) {
     let message = "";
     let pollingCount = 0;
+    const MAX_POLLINGS = 30;
     console.log("\n========Nexus: Verify and Close staging repo=======");
     try {
         console.log(`Starting to close staging repository ${configs.stagingRepoId} ...`);
@@ -118,7 +119,7 @@ function closeStagingRepo(configs) {
         message = childProcess.execSync(`curl -X POST -d "<promoteRequest><data><stagedRepositoryId>${configs.stagingRepoId}</stagedRepositoryId></data></promoteRequest>" -H "Content-Type: application/xml" -u ${configs.nexus_ossrhuser}:${configs.nexus_ossrhpass} -k https://oss.sonatype.org/service/local/staging/profiles/${configs.nexus_stagingProfileId}/finish`);
         message = message.toString();
 
-        for (; pollingCount < 10; pollingCount++) {
+        for (; pollingCount < MAX_POLLINGS; pollingCount++) {
             console.log(`\nPolling the close operation finished or not...`);
             console.log(`curl -X GET -H "Content-Type:application/xml" -u **:** -k https://oss.sonatype.org/service/local/staging/repository/${configs.stagingRepoId}`);
             message = childProcess.execSync(`curl -X GET -H "Content-Type:application/xml" -u ${configs.nexus_ossrhuser}:${configs.nexus_ossrhpass} -k https://oss.sonatype.org/service/local/staging/repository/${configs.stagingRepoId}`);
@@ -130,7 +131,7 @@ function closeStagingRepo(configs) {
             childProcess.execSync(`sleep 2s`);
         }
 
-        if (pollingCount >= 10) {
+        if (pollingCount >= MAX_POLLINGS) {
             console.log("\nQuerying the close operation result...");
             message = childProcess.execSync(`curl -X GET -H "Content-Type:application/xml" -u ${configs.nexus_ossrhuser}:${configs.nexus_ossrhpass} -k https://oss.sonatype.org/service/local/staging/repository/${configs.stagingRepoId}/activity`);
             // console.log(message.toString());
